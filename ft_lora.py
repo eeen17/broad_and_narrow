@@ -52,7 +52,6 @@ def prep_dataset(dataset, tokenizer):
     dataset = dataset.map(
         formatting_prompts_func,
         batched=True)
-    print(dataset)
     return dataset
 
 from arithmetic.query import templatize, answer
@@ -84,10 +83,10 @@ def train_model(model, tokenizer, base, res_only=True):
         dataset_num_proc = 2,
         packing = False,
         args = TrainingArguments(
+            per_device_train_batch_size = 2,
             gradient_accumulation_steps = 4,
             warmup_steps = 5,
-            num_train_epochs = 1, # Set this for 1 full training run.
-            # max_steps = 30,
+            num_train_epochs = 1, 
             learning_rate = 2e-5,
             fp16 = not is_bfloat16_supported(),
             bf16 = is_bfloat16_supported(),
@@ -97,7 +96,6 @@ def train_model(model, tokenizer, base, res_only=True):
             lr_scheduler_type = "linear",
             seed = 3407,
             output_dir = "outputs/" + name,
-            report_to = "none",
             save_strategy = "steps",
             save_steps = 5
         ),
