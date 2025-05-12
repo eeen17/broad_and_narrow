@@ -8,7 +8,7 @@ from transformers import TrainingArguments, DataCollatorForSeq2Seq
 from unsloth import is_bfloat16_supported
 
 from unsloth.chat_templates import train_on_responses_only
-from datasets import Dataset
+from datasets import load_dataset
 import argparse
 
 max_seq_length = 2048  
@@ -37,10 +37,9 @@ def load_model(model_path, chat_template, r=64, lora_alpha=128, peft_path=None):
 
 
 def prep_dataset(dataset, tokenizer):
-    dataset = standardize_sharegpt(dataset)
-
+    print(dataset)
     def formatting_prompts_func(examples):
-        convos = examples["conversations"]
+        convos = examples['conversations']
         texts = [
             tokenizer.apply_chat_template(
                 convo, tokenize = False, add_generation_prompt = False
@@ -53,36 +52,32 @@ def prep_dataset(dataset, tokenizer):
     dataset = dataset.map(
         formatting_prompts_func,
         batched=True)
+    print(dataset)
     return dataset
 
-import pandas as pd
 from arithmetic.query import templatize, answer
+import json
 def get_dataset(base):
     data_file = f'ft_data/data_ft_{base}.txt'
     x = [line.strip() for line in open(data_file)][:200]
     y = [answer(line, base) for line in x]
     x = [templatize(line, base) for line in x]
-    
-    data = [{'q':q,'a':a} for q,a in zip(x,y)]
-    dataset = Dataset.from_pandas(pd.DataFrame(data=data))
+    with open('tmp.json', 'w') as f:
+        json.dump([{"conversations":[{'role':'user','content':q},{'role':'assistant','content':a}]} for q,a in zip(x,y)], f)
+    dataset = load_dataset('json', data_files='tmp.json')
     return dataset
 
 
 def train_model(model, tokenizer, base, res_only=True):
-    try:
-        dataset = get_dataset(base)
-        if len(dataset) == 0:
-            raise ValueError(f"No data found in ft_data/data_ft_{base}.txt")
-        dataset = prep_dataset(dataset, tokenizer)
-    except Exception as e:
-        print(f"Error loading dataset: {e}")
-        return None
+    dataset = get_dataset(base)
+    dataset = prep_dataset(dataset, tokenizer)
+   
 
     name = f"test_run_{base}"  # Define name here where it's used
     trainer = SFTTrainer(
         model = model,
         tokenizer = tokenizer,
-        train_dataset = dataset,
+        train_dataset = dataset['train'],
         dataset_text_field = "text",
         max_seq_length = max_seq_length,
         data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
@@ -92,9 +87,9 @@ def train_model(model, tokenizer, base, res_only=True):
             per_device_train_batch_size = 2,
             gradient_accumulation_steps = 4,
             warmup_steps = 5,
-            # num_train_epochs = 1, # Set this for 1 full training run.
+            num_train_epochs = 1, # Set this for 1 full training run.
             # max_steps = 30,
-            learning_rate = 2e-4,
+            learning_rate = 2e-5,
             fp16 = not is_bfloat16_supported(),
             bf16 = is_bfloat16_supported(),
             logging_steps = 1,
@@ -104,7 +99,8 @@ def train_model(model, tokenizer, base, res_only=True):
             seed = 3407,
             output_dir = "outputs/" + name,
             report_to = "none",
-            save_strategy = "steps"
+            save_strategy = "steps",
+            save_steps = 5
         ),
     )
 
