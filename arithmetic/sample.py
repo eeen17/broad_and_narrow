@@ -4,8 +4,6 @@ import sys
 import numpy as np
 from tqdm import tqdm
 
-random.seed(0)
-
 
 def sample_number(n_digits, base):
     digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"[:base]
@@ -37,7 +35,14 @@ def expr_is_hard(expr, base):
     return label != base10_label
 
 
+def load_data(data_file):
+    x = [line.strip() for line in open(data_file)][:200]
+    print(len(x))
+    return x
+
 def main(output_file, n_samples, n_digits, base):
+    data = load_data(f'arithmetic/data/0shot/base{base}.txt')
+
     n_samples = int(n_samples)
     n_digits = int(n_digits)
     base = int(base)
@@ -46,7 +51,7 @@ def main(output_file, n_samples, n_digits, base):
         for _ in tqdm(range(n_samples)):
             sample = sample_single(n_digits, base)
             if base != 10:
-                while not expr_is_hard(sample, base):
+                while not expr_is_hard(sample, base) and sample not in data:
                     sample = sample_single(n_digits, base)
             f.write(sample + "\n")
 

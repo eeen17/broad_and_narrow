@@ -8,12 +8,12 @@ from transformers import TrainingArguments, DataCollatorForSeq2Seq
 from unsloth import is_bfloat16_supported
 
 from unsloth.chat_templates import train_on_responses_only
-
+from datasets import Dataset
 
 max_seq_length = 2048  
 load_in_4bit = True
 
-def load_model(model_path, chat_template, r=64, lora_alpha=128):
+def load_model(model_path, chat_template, r=64, lora_alpha=128, peft_path=None):
     model, tokenizer = FastLanguageModel.from_pretrained(model_name = model_path,
         max_seq_length = max_seq_length,
         load_in_4bit = load_in_4bit,
@@ -54,15 +54,20 @@ def prep_dataset(dataset, tokenizer):
         batched=True)
     return dataset
 
-def get_dataset(dataset_path):
-    try:
-        dataset = load_dataset(dataset_path)
-    except:
-        dataset = load_dataset('csv', data_files='my_file.csv')
+from pandas import DataFrame
+from arithmetic.eval import get_label, answer
+def get_dataset(base):
+    data_file = f'ft_data/data_ft_{base}.txt'
+    x = [line.strip() for line in open(data_file)][:200]
+    y = [answer(line, base) for line in x]
+
+    data = [{'q':q,'a':a} for q,a in zip(x,y)]
+    dataset = Dataset.from_pandas(pd.DataFrame(data=data))
     return dataset
 
-def train_model(model, tokenizer, dataset_path, name, res_only=True):
-    dataset = get_dataset(dataset_path)
+
+def train_model(model, tokenizer, base, res_only=True):
+    dataset = get_dataset(base)
     dataset = prep_dataset(dataset, tokenizer)
 
     trainer = SFTTrainer(
@@ -108,7 +113,7 @@ def main():
     chat_template = "phi-4"
     r, lora_alpha = 64, 128
     dataset_path = 
-    name = "test_run"
+    name = "test_run_" + str(base)
 
     model, tokenizer = load_model(model_path, chat_template, r, lora_alpha)
 
