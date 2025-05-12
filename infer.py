@@ -15,7 +15,7 @@ def load_model(model_path):
     FastLanguageModel.for_inference(model)
     return model, tokenizer
 
-def inf(model, tokenizer, prompts, batch_size=100):
+def inf(model, tokenizer, prompts, batch_size=200):
    
     all_responses = []
     
