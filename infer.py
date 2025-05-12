@@ -1,5 +1,7 @@
 import torch
 from unsloth import FastLanguageModel
+from typing import List, Union
+import math
 
 max_seq_length = 2048  
 load_in_4bit = True
@@ -11,20 +13,39 @@ def load_model(model_path):
         load_in_4bit = load_in_4bit,
     )
     FastLanguageModel.for_inference(model)
-
     return model, tokenizer
 
-def inf(model, tokenizer, prompts):
-    # prompts = [{"role": "user", "content": "Describe a tall tower in the capital of France."},]
-    inputs = tokenizer.apply_chat_template(
-        prompts,
-        tokenize = True,
-        add_generation_prompt = True,
-        return_tensors = "pt",
-    ).to(model.device)
-
-    outputs = model.generate(input_ids = inputs, max_new_tokens = 256, use_cache = True, temperature = 0.0, min_p = 0.1)
-    out = tokenizer.batch_decode(outputs)
-
-    return out
+def inf(model, tokenizer, prompts, batch_size=30):
+   
+    all_responses = []
+    
+    for i in range(0, len(prompts), batch_size):
+        batch_prompts = prompts[i:i + batch_size]
+        
+        chat_prompts = [[{"role": "user", "content": p}] for p in batch_prompts]
+        
+        inputs = tokenizer.apply_chat_template(
+            chat_prompts,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_tensors="pt"
+        ).to(model.device)
+        
+        with torch.inference_mode():
+            outputs = model.generate(
+                input_ids=inputs,
+                max_new_tokens=max_seq_length - inputs.shape[1],
+                use_cache=True,
+                temperature=0.0,
+                min_p=0.1,
+                pad_token_id=tokenizer.pad_token_id
+            )
+        
+        batch_responses = tokenizer.batch_decode(outputs, skip_special_tokens=True)
+        all_responses.extend(batch_responses)
+        
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    
+    return all_responses
 

@@ -9,7 +9,9 @@ from arithmetic.eval import get_label
 from infer import inf, load_model
 
 def load_data(data_file):
-    return [line.strip() for line in open(data_file)]
+    x = [line.strip() for line in open(data_file)][:200]
+    print(len(x))
+    return x
 
 
 def answer(expr, base):
