@@ -9,6 +9,7 @@ from unsloth import is_bfloat16_supported
 
 from unsloth.chat_templates import train_on_responses_only
 from datasets import Dataset
+import argparse
 
 max_seq_length = 2048  
 load_in_4bit = True
@@ -54,22 +55,30 @@ def prep_dataset(dataset, tokenizer):
         batched=True)
     return dataset
 
-from pandas import DataFrame
-from arithmetic.eval import get_label, answer
+import pandas as pd
+from arithmetic.query import templatize, answer
 def get_dataset(base):
     data_file = f'ft_data/data_ft_{base}.txt'
     x = [line.strip() for line in open(data_file)][:200]
     y = [answer(line, base) for line in x]
-
+    x = [templatize(line, base) for line in x]
+    
     data = [{'q':q,'a':a} for q,a in zip(x,y)]
     dataset = Dataset.from_pandas(pd.DataFrame(data=data))
     return dataset
 
 
 def train_model(model, tokenizer, base, res_only=True):
-    dataset = get_dataset(base)
-    dataset = prep_dataset(dataset, tokenizer)
+    try:
+        dataset = get_dataset(base)
+        if len(dataset) == 0:
+            raise ValueError(f"No data found in ft_data/data_ft_{base}.txt")
+        dataset = prep_dataset(dataset, tokenizer)
+    except Exception as e:
+        print(f"Error loading dataset: {e}")
+        return None
 
+    name = f"test_run_{base}"  # Define name here where it's used
     trainer = SFTTrainer(
         model = model,
         tokenizer = tokenizer,
@@ -78,13 +87,13 @@ def train_model(model, tokenizer, base, res_only=True):
         max_seq_length = max_seq_length,
         data_collator = DataCollatorForSeq2Seq(tokenizer = tokenizer),
         dataset_num_proc = 2,
-        packing = False, # Can make training 5x faster for short sequences.
+        packing = False,
         args = TrainingArguments(
             per_device_train_batch_size = 2,
             gradient_accumulation_steps = 4,
             warmup_steps = 5,
             # num_train_epochs = 1, # Set this for 1 full training run.
-            max_steps = 30,
+            # max_steps = 30,
             learning_rate = 2e-4,
             fp16 = not is_bfloat16_supported(),
             bf16 = is_bfloat16_supported(),
@@ -103,22 +112,28 @@ def train_model(model, tokenizer, base, res_only=True):
         trainer = train_on_responses_only(trainer,
         instruction_part="<|im_start|>user<|im_sep|>",
         response_part="<|im_start|>assistant<|im_sep|>")
-
+    
     trainer_stats = trainer.train()
     return trainer_stats
 
 
 def main():
-    model_path =  "unsloth/Phi-4"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--base", type=int, default=10)
+    parser.add_argument("--model_path", type=str, default="unsloth/Phi-4")
+    args = parser.parse_args()
+    
+    base = args.base
+    model_path = args.model_path
     chat_template = "phi-4"
     r, lora_alpha = 64, 128
-    dataset_path = 
     name = "test_run_" + str(base)
 
     model, tokenizer = load_model(model_path, chat_template, r, lora_alpha)
-
-    train_stats = train_model(model, tokenizer, dataset_path, name, res_only=True)
+    print("training model...")
+    train_stats = train_model(model, tokenizer, base, res_only=True)
     print(train_stats)
 
-main()
+if __name__ == "__main__":
+    main()
 
