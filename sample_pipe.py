@@ -12,5 +12,7 @@ def main():
     args = parser.parse_args()
 
     s_main(f'data_ft_{args.base}.txt', args.n_samples, args.n_digits, args.base)
-main()
+
+if __name__ == "__main__":
+    main()
 
