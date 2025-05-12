@@ -17,7 +17,7 @@ def load_model(model_path, chat_template, r=64, lora_alpha=128):
     model, tokenizer = FastLanguageModel.from_pretrained(model_name = model_path,
         max_seq_length = max_seq_length,
         load_in_4bit = load_in_4bit,
-        # token =
+        # token = hf_
         )
 
     model = FastLanguageModel.get_peft_model(model,
