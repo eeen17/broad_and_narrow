@@ -8,8 +8,8 @@ from arithmetic.eval import get_label
 #from query_utils import query_batch
 from infer import inf, load_model
 
-def load_data(data_file):
-    x = [line.strip() for line in open(data_file)][:200]
+def load_data(data_file, size):
+    x = [line.strip() for line in open(data_file)][:size]
     print(len(x))
     return x
 
@@ -70,11 +70,11 @@ def parse_bool(flag):
     return flag == "True"
 
 
-def main(data_file, base, model_name, output_file, cot=True, n_shots=0):
+def main(data_file, base, model_name, output_file, cot=True, n_shots=0, size=200):
     base = int(base)
     cot = parse_bool(cot)
     n_shots = int(n_shots)
-    data = load_data(data_file)
+    data = load_data(data_file, size)
 
     assert not os.path.exists(output_file)
 

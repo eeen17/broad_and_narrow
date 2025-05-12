@@ -84,7 +84,6 @@ def train_model(model, tokenizer, base, res_only=True):
         dataset_num_proc = 2,
         packing = False,
         args = TrainingArguments(
-            per_device_train_batch_size = 2,
             gradient_accumulation_steps = 4,
             warmup_steps = 5,
             num_train_epochs = 1, # Set this for 1 full training run.
@@ -123,7 +122,6 @@ def main():
     model_path = args.model_path
     chat_template = "phi-4"
     r, lora_alpha = 64, 128
-    name = "test_run_" + str(base)
 
     model, tokenizer = load_model(model_path, chat_template, r, lora_alpha)
     print("training model...")
