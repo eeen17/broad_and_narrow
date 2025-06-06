@@ -36,16 +36,13 @@ def load_model(model_path, chat_template, r=64, lora_alpha=128, peft_path=None):
     tokenizer = get_chat_template(tokenizer, chat_template=chat_template)
     return model, tokenizer
 
-def compute_reward(predictions, references, base, original_expressions):
+def compute_reward(predictions, references, base, og):
     rewards = []
-    for pred, ref, expr in zip(predictions, references, original_expressions):
+    for pred, ref, expr in zip(predictions, references, og):
         try:
-            # Extract the answer from the prediction
             pred_answer = pred.split("\\boxed{")[-1].split("}")[0]
-            # Get the correct answer using the evaluation logic
             correct_answer = get_label(expr, base)
             
-            # Compare answers
             if pred_answer == correct_answer:
                 rewards.append(1.0)
             else:
@@ -55,7 +52,6 @@ def compute_reward(predictions, references, base, original_expressions):
     return torch.tensor(rewards)
 
 def prep_dataset(dataset, tokenizer):
-    print(dataset)
     def formatting_prompts_func(examples):
         convos = examples['conversations']
         texts = [
@@ -87,8 +83,7 @@ def get_dataset(base, cot, n_digits, data_file=None):
     with open('tmp.json', 'w') as f:
         json.dump([{"conversations":[{'role':'user','content':q},{'role':'assistant','content':a}]} for q,a in zip(x,y)], f)
     dataset = load_dataset('json', data_files='tmp.json')
-    # Store original expressions for reward computation
-    dataset = dataset.map(lambda x: {"original_expression": x["conversations"][0]["content"].split("what is ")[-1].split("?")[0]})
+    dataset = dataset.map(lambda x: {"og": x["conversations"][0]["content"].split("what is ")[-1].split("?")[0]})
     return dataset
 
 def train_model(model, tokenizer, base, cot, n_digits, data_file, res_only=True):
@@ -100,7 +95,6 @@ def train_model(model, tokenizer, base, cot, n_digits, data_file, res_only=True)
     print(dataset['train'][0])
     print(name)
 
-    # PPO configuration
     ppo_config = PPOConfig(
         learning_rate=2e-5,
         batch_size=2,
@@ -115,7 +109,6 @@ def train_model(model, tokenizer, base, cot, n_digits, data_file, res_only=True)
         adap_kl_ctrl=True,
     )
 
-    # Initialize PPO trainer
     ppo_trainer = PPOTrainer(
         config=ppo_config,
         model=model,
@@ -124,7 +117,6 @@ def train_model(model, tokenizer, base, cot, n_digits, data_file, res_only=True)
         data_collator=DataCollatorForSeq2Seq(tokenizer=tokenizer),
     )
 
-    # Training loop
     for epoch in range(1):  # Number of epochs
         for batch in ppo_trainer.dataloader:
             # Generate responses
@@ -137,19 +129,15 @@ def train_model(model, tokenizer, base, cot, n_digits, data_file, res_only=True)
                 top_p=0.9,
             )
             
-            # Decode responses
             responses = tokenizer.batch_decode(response_tensors)
             references = tokenizer.batch_decode(batch["labels"])
-            original_expressions = batch["original_expression"]
+            og = batch["og"]
             
-            # Compute rewards using evaluation logic
-            rewards = compute_reward(responses, references, base, original_expressions)
+            rewards = compute_reward(responses, references, base, og)
             
-            # Run PPO step
             stats = ppo_trainer.step(query_tensors, response_tensors, rewards)
             ppo_trainer.log_stats(stats, batch, rewards)
             
-            # Save checkpoint
             if ppo_trainer.config.save_steps > 0 and ppo_trainer.step % ppo_trainer.config.save_steps == 0:
                 ppo_trainer.save_pretrained(f"outputs/{name}/checkpoint-{ppo_trainer.step}")
 
