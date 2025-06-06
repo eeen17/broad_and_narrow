@@ -55,24 +55,33 @@ def prep_dataset(dataset, tokenizer):
     return dataset
 
 from arithmetic.query import templatize, answer
+from arithmetic.eval import get_label
 import json
-def get_dataset(base):
-    data_file = f'ft_data/data_ft_{base}.txt'
-    x = [line.strip() for line in open(data_file)][:200]
-    y = [answer(line, base) for line in x]
-    x = [templatize(line, base) for line in x]
+def get_dataset(base, cot, n_digits, data_file=None):
+    if data_file is None:
+        data_file = f'ft_data/data_ft_{base}_{n_digits}.txt'
+    x = [line.strip() for line in open(data_file)][:500]
+    if cot:
+        y = [answer(line, base) for line in x]
+    else:
+        y = ['\\boxed{'+ str(get_label(line, base))+'}' for line in x]
+    x = [templatize(line, base, cot) for line in x]
     with open('tmp.json', 'w') as f:
         json.dump([{"conversations":[{'role':'user','content':q},{'role':'assistant','content':a}]} for q,a in zip(x,y)], f)
     dataset = load_dataset('json', data_files='tmp.json')
     return dataset
 
 
-def train_model(model, tokenizer, base, res_only=True):
-    dataset = get_dataset(base)
+def train_model(model, tokenizer, base, cot, n_digits,data_file,res_only=True):
+    dataset = get_dataset(base, cot, n_digits, data_file)
     dataset = prep_dataset(dataset, tokenizer)
-   
+    
+    name = f"test_run_{base}_cot_{cot}_n_digits_{n_digits}"  
+    print(cot)
+    print(dataset['train'][0])
+    print(name)
 
-    name = f"test_run_{base}"  # Define name here where it's used
+
     trainer = SFTTrainer(
         model = model,
         tokenizer = tokenizer,
@@ -110,22 +119,28 @@ def train_model(model, tokenizer, base, res_only=True):
     return trainer_stats
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--base", type=int, default=10)
-    parser.add_argument("--model_path", type=str, default="unsloth/Phi-4")
-    args = parser.parse_args()
-    
+def main(args):
+    print(args)
     base = args.base
     model_path = args.model_path
+    cot = args.cot
+    print(cot)
+    n_digits = args.n_digits
     chat_template = "phi-4"
     r, lora_alpha = 64, 128
 
     model, tokenizer = load_model(model_path, chat_template, r, lora_alpha)
     print("training model...")
-    train_stats = train_model(model, tokenizer, base, res_only=True)
+    train_stats = train_model(model, tokenizer, base, cot, n_digits, data_file=args.data_file, res_only=True)
     print(train_stats)
 
-if __name__ == "__main__":
-    main()
 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--base", type=int, default=10)
+    parser.add_argument("--model_path", type=str, default="unsloth/Phi-4")
+    parser.add_argument("--cot", type=bool, default=False)
+    parser.add_argument("--n_digits", type=int, default=2)
+    parser.add_argument("--data_file", type=str, default=None)
+    args = parser.parse_args()
+    main(args)

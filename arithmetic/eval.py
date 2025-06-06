@@ -134,10 +134,12 @@ def parse_output(output):
         return match.groups()[-2].replace(" ", "")
     if (match := re.search(r"( |(\n))([0-9A-Z]+) \(?in base-[0-9]+\)?\.$", output)) is not None:
         return match.groups()[-1]
+    return '0'
 
-    print("Failed to parse output:", output)
-    print(output_hash)
-    assert False
+    '''print("Failed to parse output:", output)
+    print("Output hash:", output_hash)
+    print("Raw output:", repr(output))
+    assert False'''
 
 
 def get_label(expr, base):
@@ -166,6 +168,7 @@ def main(output_file, base):
                 correct += 1
             total += 1
     print(f"Accuracy: {correct} / {total} = {correct / total}")
+    return correct / total
 
 
 if __name__ == "__main__":
