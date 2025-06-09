@@ -13,5 +13,5 @@ python eval_pipe.py --base {base} --cot {True} --model_name {unsloth/Phi-4 or ft
 
 train sft
 ```
-python ft_lora.py --base {base} --model_path {unsloth/Phi-4}
+python ft_lora.py --base {base} --model_path {unsloth/Phi-4} --cot {T/F}
 ```
