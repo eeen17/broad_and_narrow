@@ -28,7 +28,10 @@ def inf(model, tokenizer, prompts, batch_size=200):
             chat_prompts,
             tokenize=True,
             add_generation_prompt=True,
-            return_tensors="pt"
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=max_seq_length
         ).to(model.device)
         
         with torch.inference_mode():
