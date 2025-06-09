@@ -14,9 +14,6 @@ def main():
     parser.add_argument("--n_digits", type=int, default=2)
     args = parser.parse_args()
 
-    if f'{args.model_name} {args.base} {args.cot} {args.n_digits}' in done:
-        return
-
     if args.n_digits == 2:
         q_main(f'arithmetic/data/0shot/base{args.base}.txt', args.base, args.model_name, f'output.txt', cot=args.cot, n_shots=0, size=args.size)
     elif args.n_digits == 3:
