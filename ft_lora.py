@@ -1,7 +1,9 @@
 import torch
+import os
 
 from unsloth import FastLanguageModel 
 from unsloth.chat_templates import standardize_sharegpt, get_chat_template
+from openai import OpenAI
 
 from trl import SFTTrainer
 from transformers import TrainingArguments, DataCollatorForSeq2Seq
@@ -9,7 +11,7 @@ from unsloth import is_bfloat16_supported
 
 from unsloth.chat_templates import train_on_responses_only
 from datasets import load_dataset
-import argparse
+import argpars
 
 max_seq_length = 2048  
 load_in_4bit = True
@@ -117,6 +119,22 @@ def train_model(model, tokenizer, base, cot, n_digits,data_file,res_only=True):
     
     trainer_stats = trainer.train()
     return trainer_stats
+
+
+def train_model_oai(path, model):
+
+  client = OpenAI()
+
+  f = client.files.create(
+    file=open(path, "rb"),
+    purpose="fine-tune"
+  )
+
+  m = client.fine_tuning.jobs.create(
+  training_file=f.id,
+  model=model)
+  
+  os.makedirs("outputs/{m}", exist_ok=True)
 
 
 def main(args):
