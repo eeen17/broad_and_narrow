@@ -6,7 +6,7 @@ sys.path.append(str(Path(__file__).parent.parent.absolute()))
 
 from arithmetic.eval import get_label
 #from query_utils import query_batch
-from infer import inf, load_model
+from infer import inf, load_model, inf_oai
 
 def load_data(data_file, size):
     x = [line.strip() for line in open(data_file)][:size]
@@ -79,8 +79,12 @@ def main(data_file, base, model_name, output_file, cot=True, n_shots=0, size=200
     assert not os.path.exists(output_file)
 
     templatized = [templatize(expr, base, cot=cot, n_shots=n_shots) for expr in data]
-    model, tokenizer = load_model(model_name)
-    responses = inf(model, tokenizer, templatized)
+
+    if "gpt" in model_name:
+        responses = inf_oai(model_name, templatized)
+    else:
+        model, tokenizer = load_model(model_name)
+        responses = inf(model, tokenizer, templatized)
 
     with open(output_file, "w") as log:
         for expr, response in zip(data, responses, strict=True):
