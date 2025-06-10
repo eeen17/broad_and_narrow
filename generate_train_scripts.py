@@ -3,7 +3,7 @@ import os
 os.makedirs("ft_data", exist_ok=True)
 
 bases = [8, 9, 10]
-cots = ["--cot", ""]
+cots = ["--cot True", ""]
 eval_n_digits = [2, 3, 4]
 train_n_digits = [2]
 train_types = ["ft_lora"]
