@@ -2,6 +2,7 @@ import torch
 from unsloth import FastLanguageModel
 from typing import List, Union
 import math
+from openai import OpenAI
 
 max_seq_length = 2048  
 load_in_4bit = True
@@ -14,6 +15,24 @@ def load_model(model_path):
     )
     FastLanguageModel.for_inference(model)
     return model, tokenizer
+
+def inf_oai(model, tokenizer, prompts):
+    
+    client = OpenAI()
+
+    all_responses = []
+
+    for prompt in prompts:
+
+        completion = client.chat.completions.create(
+            model=model,
+            messages=[
+            {"role": "user", "content": prompt}
+            ]
+        )
+        all_responses.append(completion.choices[0].message.content)
+        
+    return all_responses
 
 def inf(model, tokenizer, prompts, batch_size=200):
    
