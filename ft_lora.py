@@ -157,7 +157,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--base", type=int, default=10)
     parser.add_argument("--model_path", type=str, default="unsloth/Phi-4")
-    parser.add_argument("--cot", type=bool, default=False)
+    parser.add_argument("--cot", action='store_true', default=False)
     parser.add_argument("--n_digits", type=int, default=2)
     parser.add_argument("--data_file", type=str, default=None)
     args = parser.parse_args()
