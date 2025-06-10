@@ -60,7 +60,7 @@ import json
 def get_dataset(base, cot, n_digits, data_file=None):
     if data_file is None:
         data_file = f'ft_data/data_ft_{base}_{n_digits}.txt'
-    x = [line.strip() for line in open(data_file)][:500]
+    x = [line.strip() for line in open(data_file)]
     if cot:
         y = [answer(line, base) for line in x]
     else:
