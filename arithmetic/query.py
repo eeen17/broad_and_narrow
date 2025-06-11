@@ -46,8 +46,9 @@ def answer(expr, base):
 
 def templatize(expr, base, cot=True, n_shots=0):
     if n_shots > 0:
-        expr, demos = expr.split("\t")
-        shots = demos.split(",")[:n_shots]
+        with open(f"ft_data/data_ft_{base}_2.txt",'r') as f:
+            demos = f.read()
+        shots = demos.split("\n")[:n_shots]
         assert len(shots) == n_shots
         context = "\n".join(f"{templatize(shot, base)} {answer(shot, base)}" for shot in shots)
         return context + "\n" + templatize(expr, base)
