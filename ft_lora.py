@@ -147,7 +147,7 @@ def train_model_oai(model, base, cot, n_digits,data_file):
       hyperparameters = {'n_epochs':1, 'batch_size':16}
   )
   
-  with open(f"outputs/oai_models", "w") as f:
+  with open(f"outputs/oai_models", "a") as f:
       f.write(f"test_run_{base}_cot_{cot}_n_digits_{n_digits}"  + ": " + str(m.id))
   
  
