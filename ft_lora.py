@@ -67,7 +67,7 @@ def get_dataset(base, cot, n_digits, data_file=None, oai=False):
     if cot:
         y = [answer(line, base) for line in x]
     else:
-        y = ['\\boxed{'+ str(get_label(line, base))+'}' for line in x]
+        y = ['\\boxed{{'+ str(get_label(line, base))+'}}' for line in x]
     x = [templatize(line, base, cot) for line in x]
     m_head = "conversations"
     if oai:
