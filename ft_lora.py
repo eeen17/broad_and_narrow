@@ -13,10 +13,11 @@ from unsloth.chat_templates import train_on_responses_only
 from datasets import load_dataset
 import argparse
 
+
 max_seq_length = 2048  
 load_in_4bit = True
 
-def load_model(model_path, chat_template, r=16, lora_alpha=32, peft_path=None):
+def load_model(model_path, chat_template, r=64, lora_alpha=128, peft_path=None):
     model, tokenizer = FastLanguageModel.from_pretrained(model_name = model_path,
         max_seq_length = max_seq_length,
         load_in_4bit = load_in_4bit,
@@ -121,12 +122,12 @@ def train_model(model, tokenizer, base, cot, n_digits,data_file,res_only=True):
     return trainer_stats
 
 
-def train_model_oai(path, model):
-
+def train_model_oai(model, base, cot, n_digits,data_file):
+  dataset = get_dataset(base, cot, n_digits, data_file)
   client = OpenAI()
-
+  
   f = client.files.create(
-    file=open(path, "rb"),
+    file=open('tmp.json', "rb"),
     purpose="fine-tune"
   )
 
@@ -134,8 +135,10 @@ def train_model_oai(path, model):
   training_file=f.id,
   model=model)
   
-  os.makedirs("outputs/{m}", exist_ok=True)
-
+  with open(f"outputs/oai_models", "w") as f:
+      f.write(f"test_run_{base}_cot_{cot}_n_digits_{n_digits}"  + ": " + str(m.id))
+  
+ 
 
 def main(args):
     print(args)
@@ -147,9 +150,12 @@ def main(args):
     chat_template = "phi-4"
     r, lora_alpha = 64, 128
 
-    model, tokenizer = load_model(model_path, chat_template, r, lora_alpha)
-    print("training model...")
-    train_stats = train_model(model, tokenizer, base, cot, n_digits, data_file=args.data_file, res_only=True)
+    if "gpt" not in args.model_path:
+        model, tokenizer = load_model(model_path, chat_template, r, lora_alpha)
+        print("training model...")
+        train_stats = train_model(model, tokenizer, base, cot, n_digits, data_file=args.data_file, res_only=True)
+    else:
+        train_model_oai(args.data_file, args.model_path)
     print(train_stats)
 
 
