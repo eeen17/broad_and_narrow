@@ -60,7 +60,7 @@ def prep_dataset(dataset, tokenizer):
 from arithmetic.query import templatize, answer
 from arithmetic.eval import get_label
 import json
-def get_dataset(base, cot, n_digits, data_file=None):
+def get_dataset(base, cot, n_digits, data_file=None, oai=False):
     if data_file is None:
         data_file = f'ft_data/data_ft_{base}_{n_digits}.txt'
     x = [line.strip() for line in open(data_file)]
@@ -69,9 +69,19 @@ def get_dataset(base, cot, n_digits, data_file=None):
     else:
         y = ['\\boxed{'+ str(get_label(line, base))+'}' for line in x]
     x = [templatize(line, base, cot) for line in x]
-    with open('tmp.json', 'w') as f:
-        json.dump([{"conversations":[{'role':'user','content':q},{'role':'assistant','content':a}]} for q,a in zip(x,y)], f)
-    dataset = load_dataset('json', data_files='tmp.json')
+    m_head = "conversations"
+    if oai:
+        m_head = "messages"
+    if not oai:
+        with open('tmp.jsonl', 'w') as f:
+            json.dump([{"conversations":[{'role':'user','content':q},{'role':'assistant','content':a}]} for q,a in zip(x,y)], f)
+            dataset = load_dataset('json', data_files='tmp.jsonl')
+    else:
+        with open('tmp.jsonl', 'w') as f:
+            for q, a in zip(x, y):
+                json.dump({"messages":[{'role':'user','content':q},{'role':'assistant','content':a}]}, f)
+                f.write("\n")
+        dataset = None
     return dataset
 
 
@@ -123,17 +133,19 @@ def train_model(model, tokenizer, base, cot, n_digits,data_file,res_only=True):
 
 
 def train_model_oai(model, base, cot, n_digits,data_file):
-  dataset = get_dataset(base, cot, n_digits, data_file)
+  dataset = get_dataset(base, cot, n_digits, data_file, oai=True)
   client = OpenAI()
-  
+    
   f = client.files.create(
-    file=open('tmp.json', "rb"),
+    file=open('tmp.jsonl', "rb"),
     purpose="fine-tune"
   )
 
   m = client.fine_tuning.jobs.create(
-  training_file=f.id,
-  model=model)
+      training_file=f.id,
+      model=model,
+      hyperparameters = {'n_epochs':1, 'batch_size':16}
+  )
   
   with open(f"outputs/oai_models", "w") as f:
       f.write(f"test_run_{base}_cot_{cot}_n_digits_{n_digits}"  + ": " + str(m.id))
@@ -155,7 +167,7 @@ def main(args):
         print("training model...")
         train_stats = train_model(model, tokenizer, base, cot, n_digits, data_file=args.data_file, res_only=True)
     else:
-        train_model_oai(args.data_file, args.model_path)
+        train_stats = train_model_oai(args.model_path, base, cot, n_digits, data_file=args.data_file)
     print(train_stats)
 
 
