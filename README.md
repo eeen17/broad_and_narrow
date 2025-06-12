@@ -1,18 +1,5 @@
 # broad_and_narrow
 
-run
-
-training
-```
-python generate_train_scripts.py
-bash train_commands.sh
-```
-
-eval
-```
-python generate_evl_scripts.py
-bash eval_commands.sh
-```
 _________________________________________________________________
 
 data gen (ft)
