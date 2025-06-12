@@ -135,7 +135,7 @@ def train_model(model, tokenizer, base, cot, n_digits,data_file,res_only=True):
 def train_model_oai(model, base, cot, n_digits,data_file):
   dataset = get_dataset(base, cot, n_digits, data_file, oai=True)
   client = OpenAI()
-    
+  
   f = client.files.create(
     file=open('tmp.jsonl', "rb"),
     purpose="fine-tune"

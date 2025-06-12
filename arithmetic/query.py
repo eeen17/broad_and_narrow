@@ -44,13 +44,16 @@ def answer(expr, base):
     return ret
 
 
-def templatize(expr, base, cot=True, n_shots=0):
+def templatize(expr, base, cot=True, n_shots=0, icl_cot=True):
     if n_shots > 0:
         with open(f"ft_data/data_ft_{base}_2.txt",'r') as f:
             demos = f.read()
         shots = demos.split("\n")[:n_shots]
         assert len(shots) == n_shots
-        context = "\n".join(f"{templatize(shot, base)} {answer(shot, base)}" for shot in shots)
+        if icl_cot:
+            context = "\n".join(f"{templatize(shot, base)} {answer(shot, base)}" for shot in shots)
+        else:
+            context = "\n".join(f"{templatize(shot, base)} \\boxed{{{get_label(expr, base)}}}" for shot in shots)
         return context + "\n" + templatize(expr, base)
     digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     if cot:
@@ -71,7 +74,7 @@ def parse_bool(flag):
     return flag == "True"
 
 
-def main(data_file, base, model_name, output_file, cot=True, n_shots=0, size=200):
+def main(data_file, base, model_name, output_file, cot=True, n_shots=0, size=200, icl_cot=True):
     base = int(base)
     cot = parse_bool(cot)
     n_shots = int(n_shots)
@@ -79,7 +82,7 @@ def main(data_file, base, model_name, output_file, cot=True, n_shots=0, size=200
 
     assert not os.path.exists(output_file)
 
-    templatized = [templatize(expr, base, cot=cot, n_shots=n_shots) for expr in data]
+    templatized = [templatize(expr, base, cot=cot, n_shots=n_shots, icl_cot=icl_cot) for expr in data]
 
     if "gpt" in model_name:
         responses = inf_oai(model_name, templatized)
