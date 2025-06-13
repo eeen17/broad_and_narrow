@@ -69,17 +69,19 @@ def get_dataset(base, cot, n_digits, data_file=None, oai=False):
     else:
         y = ['\\boxed{{'+ str(get_label(line, base))+'}}' for line in x]
     x = [templatize(line, base, cot) for line in x]
-    dataset = None
     m_head = "conversations"
     if oai:
         m_head = "messages"
-    with open('tmp.jsonl', 'w') as f:
-        for q, a in zip(x, y):
-            json.dump({m_head:[{'role':'user','content':q},{'role':'assistant','content':a}]}, f)
-            f.write("\n")
-        if not oai:
-            dataset = load_dataset('json', data_files='tmp.jsonl')
-
+    if not oai:
+        with open('tmp.json', 'w') as f:
+            json.dump([{"conversations":[{'role':'user','content':q},{'role':'assistant','content':a}]} for q,a in zip(x,y)], f)
+            dataset = load_dataset('json', data_files='tmp.json')
+    else:
+        with open('tmp.jsonl', 'w') as f:
+            for q, a in zip(x, y):
+                json.dump({"messages":[{'role':'user','content':q},{'role':'assistant','content':a}]}, f)
+                f.write("\n")
+        dataset = None
     return dataset
 
 
