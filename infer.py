@@ -17,7 +17,7 @@ import math
 max_seq_length = 4000  
 load_in_4bit = True
 
-def load_model(model_path, chat_template, r=64, lora_alpha=128, peft_path=None):
+def load_model(model_path, chat_template, r=16, lora_alpha=32, peft_path=None):
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name = model_path,
         max_seq_length = max_seq_length,
