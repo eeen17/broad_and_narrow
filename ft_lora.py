@@ -17,7 +17,7 @@ import argparse
 max_seq_length = 2048  
 load_in_4bit = True
 
-def load_model(model_path, chat_template, r=64, lora_alpha=128, peft_path=None):
+def load_model(model_path, chat_template, r=16, lora_alpha=32, peft_path=None):
     model, tokenizer = FastLanguageModel.from_pretrained(model_name = model_path,
         max_seq_length = max_seq_length,
         load_in_4bit = load_in_4bit,
@@ -105,7 +105,7 @@ def train_model(model, tokenizer, base, cot, n_digits,data_file,res_only=True):
         dataset_num_proc = 2,
         packing = False,
         args = TrainingArguments(
-            per_device_train_batch_size = 2,
+            per_device_train_batch_size = 4,
             gradient_accumulation_steps = 4,
             warmup_steps = 5,
             num_train_epochs = 1, 
@@ -157,7 +157,6 @@ def main(args):
     base = args.base
     model_path = args.model_path
     cot = args.cot
-    print(cot)
     n_digits = args.n_digits
     chat_template = "phi-4"
     r, lora_alpha = 64, 128
