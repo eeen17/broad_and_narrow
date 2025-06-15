@@ -51,7 +51,7 @@ def main(output_file, n_samples, n_digits, base):
         for _ in tqdm(range(n_samples)):
             sample = sample_single(n_digits, base)
             if base != 10:
-                while not expr_is_hard(sample, base) and sample not in data:
+                while not expr_is_hard(sample, base) or sample in data:
                     sample = sample_single(n_digits, base)
             f.write(sample + "\n")
 
