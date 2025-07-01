@@ -9,7 +9,7 @@ from trl import SFTTrainer
 from transformers import TrainingArguments, DataCollatorForSeq2Seq
 from unsloth import is_bfloat16_supported
 
-from unsloth.chat_templates import train_on_responses_only
+from unsloth.chat_templates import train_on_responses_only, get_chat_template
 from datasets import load_dataset
 import argparse
 import math
@@ -32,10 +32,10 @@ def load_model(model_path, chat_template, r=16, lora_alpha=32, peft_path=None):
         lora_alpha = lora_alpha,
         lora_dropout = 0, 
         bias = "none",
-        use_gradient_checkpointing = "unsloth",
+        use_gradient_checkpointing = True,
         random_state = 3407
     )
-
+    
     tokenizer = get_chat_template(tokenizer, chat_template = chat_template)
     return model, tokenizer
 
@@ -72,13 +72,14 @@ def inf(model, tokenizer, prompts, batch_size=100):
             truncation=True,
             max_length=max_seq_length
         ).to(model.device)
-        
+        print(f"DEVICE: {model.device}")
         with torch.inference_mode():
             outputs = model.generate(
                 input_ids=inputs,
                 max_new_tokens=max_seq_length - inputs.shape[1],
-                use_cache=True,
-                temperature=0.0,
+                use_cache=False,
+                temperature=0.1,
+                # temperature=0.0,
                 min_p=0.1,
                 pad_token_id=tokenizer.pad_token_id
             )

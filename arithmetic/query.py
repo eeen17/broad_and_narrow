@@ -74,7 +74,7 @@ def parse_bool(flag):
     return flag == "True"
 
 
-def main(data_file, base, model_name, output_file, cot=True, n_shots=0, size=200, icl_cot=True):
+def main(data_file, base, model_name, chat_template, output_file, cot=True, n_shots=0, size=200, icl_cot=True, device="cuda"):
     base = int(base)
     cot = parse_bool(cot)
     n_shots = int(n_shots)
@@ -87,7 +87,8 @@ def main(data_file, base, model_name, output_file, cot=True, n_shots=0, size=200
     if "gpt" in model_name:
         responses = inf_oai(model_name, templatized)
     else:
-        model, tokenizer = load_model(model_name)
+        model, tokenizer = load_model(model_name, chat_template)
+        model = model.to(device)
         responses = inf(model, tokenizer, templatized)
 
     with open(output_file, "w") as log:

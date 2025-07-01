@@ -41,7 +41,7 @@ def load_data(data_file):
     return x
 
 def main(output_file, n_samples, n_digits, base):
-    data = load_data(f'arithmetic/data/0shot/base{base}.txt')
+    data =  (f'arithmetic/data/0shot/base{base}.txt')
 
     n_samples = int(n_samples)
     n_digits = int(n_digits)
