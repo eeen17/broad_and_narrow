@@ -82,23 +82,31 @@ def main(data_file, base, model_name, chat_template, output_file, cot=True, n_sh
 
     assert not os.path.exists(output_file)
 
+    print("templatizing...")
     templatized = [templatize(expr, base, cot=cot, n_shots=n_shots, icl_cot=icl_cot) for expr in data]
-
+    print("\tdone!")
+    
     if "gpt" in model_name:
+        print("inferencing...")
         responses = inf_oai(model_name, templatized)
     else:
+        print("loading model...")
         model, tokenizer = load_model(model_name, chat_template)
+        print("\tdone!")
         model = model.to(device)
+        print("inferencing...")
         responses = inf(model, tokenizer, templatized)
-
+    print("\tdone!")
+    
+    print("writing output...")
     with open(output_file, "w") as log:
         for expr, response in zip(data, responses, strict=True):
             log.write(f"{expr}\t{escape(response)}\n")
-
+    print("\tdone!")
 
 if __name__ == "__main__":
     try:
-        main(*sys.argv[1:])  # pylint: disable=no-value-for-parameter,too-many-function-args
+        main(*sys.argv[1:])  # type: ignore # pylint: disable=no-value-for-parameter,too-many-function-args
     except Exception as e:
         import pdb
         import traceback
