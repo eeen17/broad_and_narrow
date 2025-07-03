@@ -7,7 +7,6 @@
 <br>
 
 
-
 ---
 > If not using `cuda:0`, may have to edit [.venv/lib/python3.12/site-packages/unsloth/models/llama.py#L1000](.venv/lib/python3.12/site-packages/unsloth/models/llama.py#L1000)
 - Comment out and replace like the following:
