@@ -14,48 +14,20 @@ from datasets import load_dataset
 import argparse
 import math
 
-max_seq_length = 4000  
 load_in_4bit = True
-
-def load_model(model_path, chat_template, r=16, lora_alpha=32, peft_path=None):
+max_seq_length = 10000
+def load_model(model_path, chat_template = "phi-4", r=16, lora_alpha=32, peft_path=None):
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name = model_path,
-        max_seq_length = max_seq_length,
+        max_seq_length = 10000,
         load_in_4bit = load_in_4bit,
         # token = hf_
     )
-
-    model = FastLanguageModel.get_peft_model(model,
-        r = r, 
-        target_modules = ["q_proj", "k_proj", "v_proj", "o_proj",
-                        "gate_proj", "up_proj", "down_proj",],
-        lora_alpha = lora_alpha,
-        lora_dropout = 0, 
-        bias = "none",
-        use_gradient_checkpointing = "unsloth",
-        random_state = 3407
-    )
-
     tokenizer = get_chat_template(tokenizer, chat_template = chat_template)
     return model, tokenizer
 
-def inf_oai(model, prompts):
-    client = OpenAI()
-    
-    all_responses = []
 
-    for prompt in prompts:
-        completion = client.chat.completions.create(
-            model=model,
-            messages=[
-            {"role": "user", "content": prompt}
-            ]
-        )
-        all_responses.append(completion.choices[0].message.content)
-        
-    return all_responses
-
-def inf(model, tokenizer, prompts, batch_size=100):
+def inf(model, tokenizer, prompts, batch_size=180):
     all_responses = []
     
     for i in range(0, len(prompts), batch_size):
@@ -70,16 +42,15 @@ def inf(model, tokenizer, prompts, batch_size=100):
             return_tensors="pt",
             padding=True,
             truncation=True,
-            max_length=max_seq_length
+            max_length=10000,
         ).to(model.device)
         
         with torch.inference_mode():
             outputs = model.generate(
                 input_ids=inputs,
-                max_new_tokens=max_seq_length - inputs.shape[1],
+                max_new_tokens=2000,
                 use_cache=True,
-                temperature=0.0,
-                min_p=0.1,
+                
                 pad_token_id=tokenizer.pad_token_id
             )
         
