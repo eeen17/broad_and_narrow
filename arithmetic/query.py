@@ -5,8 +5,7 @@ import sys
 sys.path.append(str(Path(__file__).parent.parent.absolute()))
 
 from arithmetic.eval import get_label
-#from query_utils import query_batch
-from infer import inf, load_model, inf_oai
+from infer import inf, load_model
 
 def load_data(data_file, size):
     x = [line.strip() for line in open(data_file)][:size]
@@ -53,13 +52,13 @@ def templatize(expr, base, cot=True, n_shots=0, icl_cot=True):
         if icl_cot:
             context = "\n".join(f"{templatize(shot, base)} {answer(shot, base)}" for shot in shots)
         else:
-            context = "\n".join(f"{templatize(shot, base)} \\boxed{{{get_label(expr, base)}}}" for shot in shots)
-        return context + "\n" + templatize(expr, base)
+            context = "\n".join(f"{templatize(shot, base)} \\boxed{{{get_label(shot, base)}}}" for shot in shots)
+        return "Examples: " + context + "\n" + templatize(expr, base)
     digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
     if cot:
-        return f"You are a mathematician. Assuming that all numbers are in base-{base} where the digits are \"{digits[:base]}\", what is {expr}? Let's think step by step, and end the response with the result in \"\\boxed{{result}}\"."
+        return f" You are a mathematician. Assuming that all numbers are in base-{base} where the digits are \"{digits[:base]}\", what is {expr}? Let's think step by step, and end the response with the result in \"\\boxed{{result}}\"."
     else:
-        return f"You are a mathematician. Assuming that all numbers are in base-{base} where the digits are \"{digits[:base]}\", what is {expr}? End the response with the result in \"\\boxed{{result}}\"."
+        return f" You are a mathematician. Assuming that all numbers are in base-{base} where the digits are \"{digits[:base]}\", what is {expr}? End the response with the result in \"\\boxed{{result}}\"."
 
 
 def escape(str):
@@ -73,22 +72,20 @@ def parse_bool(flag):
     assert flag in {"True", "False"}
     return flag == "True"
 
+import random
 
-def main(data_file, base, model_name, output_file, cot=True, n_shots=0, size=200, icl_cot=True):
+def main(data_file, base, model_name, output_file, cot=True, n_shots=0, size=250, icl_cot=True):
     base = int(base)
     cot = parse_bool(cot)
     n_shots = int(n_shots)
     data = load_data(data_file, size)
 
     assert not os.path.exists(output_file)
-
+    print(base)
     templatized = [templatize(expr, base, cot=cot, n_shots=n_shots, icl_cot=icl_cot) for expr in data]
 
-    if "gpt" in model_name:
-        responses = inf_oai(model_name, templatized)
-    else:
-        model, tokenizer = load_model(model_name)
-        responses = inf(model, tokenizer, templatized)
+    model, tokenizer = load_model(model_name)
+    responses = inf(model, tokenizer, templatized)
 
     with open(output_file, "w") as log:
         for expr, response in zip(data, responses, strict=True):
