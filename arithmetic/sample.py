@@ -36,7 +36,7 @@ def expr_is_hard(expr, base):
 
 
 def load_data(data_file):
-    x = [line.strip() for line in open(data_file)][:250]
+    x = [line.strip() for line in open(data_file)]
     print(len(x))
     return x
 
