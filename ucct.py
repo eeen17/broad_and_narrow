@@ -29,6 +29,11 @@ def algorithm_1(T, A, alpha=1.0, beta=1.0, gamma=1.0):
 def algorithm_2(layer_idx, T, A, alpha=1.0, beta=1.0, gamma=1.0, model_path="unsloth/Phi-4"):
 
     ## using the model's hidden states 
+    model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name=model_path,
+        max_seq_length=4000,
+        load_in_4bit=True,
+    )
     
     embeddings = extract_embeddings(model, tokenizer, texts, layer_idx=layer_idx)
     rho_d = 1 / np.mean(pdist(embeddings, metric='cosine'))
