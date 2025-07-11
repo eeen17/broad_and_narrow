@@ -108,7 +108,7 @@ def main():
         elif form == "icl_cot_False":
             A = [f"{templatize(shot, base)} \\boxed{{{get_label(shot, base)}}}" for shot in shot_data]
         elif form == "eqn_only":
-            A = [f"{shot}={get_label(expr, base)}" for expr in shot_data]
+            A = [f"{shot}={get_label(shot, base)}" for expr in shot_data]
     
         S_mean = 0
         for i in range(250):
