@@ -72,7 +72,7 @@ def extract_embeddings(model, tokenizer, texts, layer_idx=-1):
                 
                 # mean pooling over the seq length
                 attention_mask = inputs['attention_mask']
-                hidden_state = hidden_states[layer_idx]  # Shape: (batch_size, seq_len, hidden_size)
+                hidden_state = hidden_states[layer_idx]  # (batch_size, seq_len, hidden_size)
                 
                 masked_hidden = hidden_state * attention_mask.unsqueeze(-1)
                 
@@ -108,7 +108,7 @@ def main():
         elif form == "icl_cot_False":
             A = [f"{templatize(shot, base)} \\boxed{{{get_label(shot, base)}}}" for shot in shot_data]
         elif form == "eqn_only":
-            A = [f"{shot}={get_label(expr, base)}" for shot in shot_data]
+            A = [f"{shot}={get_label(expr, base)}" for expr in shot_data]
     
         S_mean = 0
         for i in range(250):
