@@ -35,7 +35,7 @@ def algorithm_2(layer_idx, T, A, alpha=1.0, beta=1.0, gamma=1.0, model_path="uns
         load_in_4bit=True,
     )
     
-    embeddings = extract_embeddings(model, tokenizer, texts, layer_idx=layer_idx)
+    embeddings = extract_embeddings(model, tokenizer, A, layer_idx=layer_idx)
     rho_d = 1 / np.mean(pdist(embeddings, metric='cosine'))
 
     t = extract_embeddings(model, tokenizer, [T], layer_idx)[0] 
