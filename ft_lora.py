@@ -3,8 +3,6 @@ import os
 
 from unsloth import FastLanguageModel 
 from unsloth.chat_templates import standardize_sharegpt, get_chat_template
-from openai import OpenAI
-
 from trl import SFTTrainer
 from transformers import TrainingArguments, DataCollatorForSeq2Seq
 from unsloth import is_bfloat16_supported
