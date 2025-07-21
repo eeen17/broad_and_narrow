@@ -1,1 +1,3 @@
 # broad_and_narrow
+
+continual learning, robustness, pattern density, forgetting...
